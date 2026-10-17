@@ -1,0 +1,48 @@
+# À chaque Release publiée avec un .xpi joint, ajoute la version dans updates.json (branche main).
+name: Mettre à jour updates.json
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Ajouter la version à updates.json
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          ASSETS: ${{ toJson(github.event.release.assets) }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          ADDON_ID = "vulpads@local"
+          version = os.environ["TAG"].lstrip("vV")
+          assets = json.loads(os.environ["ASSETS"])
+          xpi = next((a for a in assets if a["name"].endswith(".xpi")), None)
+          if not xpi:
+              sys.exit("Aucun fichier .xpi joint à la Release : updates.json non modifié.")
+          with open("updates.json", encoding="utf-8") as f:
+              data = json.load(f)
+          updates = data.setdefault("addons", {}).setdefault(ADDON_ID, {}).setdefault("updates", [])
+          updates[:] = [u for u in updates if u["version"] != version]
+          updates.append({"version": version, "update_link": xpi["browser_download_url"]})
+          with open("updates.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
+              f.write("\n")
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add updates.json
+          git diff --cached --quiet || git commit -m "updates.json : version ${{ github.event.release.tag_name }}"
+          git push
