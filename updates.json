@@ -9,6 +9,10 @@
         {
           "version": "1.6.0",
           "update_link": "https://github.com/gaokerena/vulpads/releases/download/v1.6.0/d7a25ef887a84d1997ef-1.6.0.xpi"
+        },
+        {
+          "version": "1.7.1",
+          "update_link": "https://github.com/gaokerena/vulpads/releases/download/v1.7.1/d7a25ef887a84d1997ef-1.7.1.xpi"
         }
       ]
     }
